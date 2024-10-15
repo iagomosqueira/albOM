@@ -57,5 +57,17 @@ foo <- function(i) {
   setNames(apply(ca, 2, sum), nm=2000:2020)
 }
 
-# ALL iters
-cab <- lapply(seq(500), foo)
+# 50 iters
+cab <- lapply(seq(50), foo)
+
+# LOADED om
+library(mse)
+
+load('output/om5b-test50.rda')
+
+omca <- apply(catch(om)$ALB, c(2,6), sum)[, ac(2000:2020)]
+
+cab[[1]]
+iter(omca, 1)
+
+
