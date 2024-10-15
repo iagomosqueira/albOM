@@ -282,6 +282,6 @@ dev.off()
 
 cpuemase <- rbindlist(lapply(seq(length(mcvars)), function(i)
   data.table(matrix(get.cpue.mase(i), ncol=4,
-  dimnames=list(i, paste0("LL", 1:4))))))
+  dimnames=list(i, paste0("Q", 1:4))))))
 
 save.image("model/abc_run5b.rda", compress="xz")

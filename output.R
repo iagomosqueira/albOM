@@ -11,7 +11,7 @@ library(mse)
 
 source("utilities.R")
 
-source("output_base.R")
+# source("output_base.R")
 
 # LOAD SS3 base run
 
@@ -22,13 +22,14 @@ fy <- 2045
 
 # --- LOAD abc run
 
-run <- mget(load("model/abc_run6.rda", verbose=FALSE,
+run <- mget(load("model/abc_run5b.rda", verbose=FALSE,
   envir=(.NE <- new.env())), envir=.NE)
 
 # EXTRACT output for all iters
-out <- mc.output(run$mcvars, run$C)
+out <- mc.output(run$mcvars)
+out <- mc.output(run$mcvars, 50)
 
-#  CREATE om
+# CHECK
 
 its <- dims(out$m)$iter
 
@@ -49,10 +50,12 @@ mat(bio)[,,'F',1:4] <- mat(bio)[,,'F',1]
 
 # - FLFisheries (catch.n, catch.sel)
 
-# FLCatch(es)
-cas <- Map(function(x, y) FLCatch(landings.n=x, landings.wt=wt(bio),
-  catch.sel=y, discards.n=x %=% 0, discards.wt=wt(bio)),
-  x=divide(out$catch.n, 5), y=divide(out$catch.sel %*% (out$catch.n %=% 1), 5))
+# FLCatch(es), RESCALE landings.n & areaSums to drop area names
+cas <- Map(function(x, y)
+  FLCatch(landings.n=areaSums(x), landings.wt=wt(bio),
+  catch.sel=areaMeans(y), discards.n=x %=% 0, discards.wt=wt(bio)), 
+  x=divide(out$landings.n, 5),
+  y=divide(out$catch.sel %*% (out$landings.n %=% 1), 5))
 
 # FLFisheries
 fis <- FLFisheries(lapply(cas, function(x)
@@ -64,60 +67,42 @@ om <- FLombf(biols=FLBiols(ALB=bio), fisheries=fis,
   refpts=FLPars(ALB=out$refpts))
 
 # EXTEND
-
 om <- fwdWindow(om, end=fy)
 
-# ADD hr & hrbar
-attr(om, 'hr') <- FLQuants(ALB=expand(n(biol(om)), area=1:6) %=% as.numeric(NA))
-attr(om, 'hrbar') <- FLQuants(ALB=expand(quantSums(n(biol(om))), area=1:6)
-  %=% as.numeric(NA))
+# ADD hr [1, y, 1, s, f, it]
+attr(om, 'hr') <- FLQuants(ALB=window(out$hr, end=2045))
+
+attr(om, 'harvest') <- FLQuants(ALB=Reduce(abind, Map(function(i, j) i %*% j,
+  i=divide(hr(om), 5),
+  j=lapply(fisheries(om), function(y) catch.sel(y[[1]])))))
+units(attr(om, 'harvest')$ALB) <- "hr"
+
+# BUG: show(FLQuant) slow because of mean/MAD calculation
 
 # SRR deviances
-
-deviances(om) <- rlnormar1(n=500, meanlog=0, sdlog=0.355, rho=out$rho,
+deviances(om) <- rlnormar1(n=500, meanlog=0, sdlog=run$sigrpost, rho=out$rho,
   years=2020:2045)
+
+# PLOT
+plot(metrics(om, metrics=.annual))
 
 # - BUILD oem
 
 # idx: FLIndexBiomass by season, with sel.pattern by sex
 
+sp <- expand(out$catch.sel[,,,,1], year=2000:fy)
+dimnames(sp) <- list(area='unique')
+
 NW <- FLIndexBiomass(
   index=window(out$index.hat %*% out$index.q, end=fy),
   index.q=expand(out$index.q, year=2000:fy),
-  sel.pattern=expand(out$sel, year=2000:fy),
-  catch.wt=wt(biol(om)),
-  range=c(startf=0.5, endf=0.5))
+  catch.wt=expand(unitMeans(wt(biol(om))), year=2000:fy),
+  sel.pattern=sp)
 
 # stk: no units
 oem <- FLoem(observations=list(ALB=list(idx=FLIndices(NW=NW),
   stk=simplify(stock(om)[[1]], 'unit'))),
   method=sampling.oem)
 
-# TODO: verify(oem, om)
-
-
-# -- SAVE
-save(om, oem, file='output/om6b.rda', compress='xz')
-
-# --- TESTS
-
-# - C = 0
-
-ctrl <- fwdControl(year=2021:fy, quant="catch", value=0)
-
-system.time(
-  tes2 <- fwdabc.om(iter(om, 1:10), ctrl, pcbar=pcbar, pla=pla)
-)
-
-system.time(
-tesf0 <- fwdabc.om(om, ctrl, pcbar=pcbar, pla=pla)
-)
-
-mets <- list(rec=function(x) unitSums(rec(x)), B=function(x) unitSums(tsb(x)))
-plot(biol(tes2$om), metrics=mets) + geom_vline(xintercept=ISOdate(2011,1,1))
-
-mets <- list(rec=function(x) seasonSums(unitSums(rec(x))),
-  B=function(x) unitSums(tsb(x))[,,,1])
-plot(biol(tes2$om), metrics=mets) + geom_vline(xintercept=2021)
-
-
+# SAVE
+save(om, oem, file='output/om5b-test50.rda', compress='xz')

@@ -6,120 +6,122 @@
 #
 # Distributed under the terms of the EUPL-1.2
 
+library(FLCore)
+
 # mc.output {{{
 
-mc.output <- function(x, C) {
+mc.output <- function(x, iter=length(x)) {
 
-  # DIMENSIONS
-  nits <- length(x)
-  dmns <- list(age=0:14, year=2000:2020, season=1:4, unit=c('F', 'M'))
+  # DIMS
+  its <- seq(iter)
+  dmns <- list(age=0:14, year=2000:2020, unit=c('F', 'M'), season=1:4, 
+    area=1:6, iter=its)
+  di <- unlist(lapply(dmns, length))
 
-  out <- list()
+  # stock.n [15,21,2,4,1,500] - x$N
+  stock.n <- FLQuant(NA, dimnames=dmns[-5], units='1000')
+  for(i in its) {
+    stock.n[,,,,,i] <- c(aperm(x[[i]]$N, c(2,1,4,3)) / 1000)
+  }
 
-  # - FLQuant [a, y, u, s, 1, i]
+  # m [15,21,2,4,1,500] - N
+  m <- FLQuant(dimnames=dmns[-5])
+  for(i in its) {
+    m[,,,,,i] <- x[[i]]$M
+  }
 
-  # stock.n (y, a, s, u) - N
-  out$stock.n <- Reduce(combine, lapply(x, function(i)
-   FLQuant(aperm(i$N, c(2,1,4,3)), dimnames=dmns, units='1000') / 1000
-  ))
+  # hr - H
+  hr <- FLQuant(dimnames=dmns[-c(1, 3)], quant="age", units="hr")
+  for(i in its) {
+    hr[,,,,,i] <- x[[i]]$H
+  }
 
-  # m - M
-  out$m <- expand(FLQuant(unlist(lapply(x, '[[', 'M')),
-    quant='age',dim=c(1,1,1,1,1,nits)),
-    age=0:14, year=2000:2020, season=1:4, unit=c('F', 'M'))
+  # - fisheries
+
+  # catch.sel - sela
+  catch.sel <- FLQuant(dimnames=dmns, units="")
+  for(i in its)
+    catch.sel[,,,,,i] <- aperm(array(x[[i]]$sela, dim=c(15,4,2,6,21)),
+      c(1,5,3,2,4))
+
+  # C = N * H * S * W
+  landings.n <- expand(stock.n, area=dmns$area) * catch.sel *
+    expand(hr, age=dmns$age, unit=dmns$unit)
+ 
+  # CHECK: apply(can * expand(wt(sbio)[, ac(2000:2020)], area=1:6), c(2,6), sum)
+
+  # - indices
 
   # index.hat - Ihat
-  out$index.hat <- Reduce(combine, lapply(x, function(i)
-   FLQuant(c(i$Ihat), dimnames=list(age='all', year=2000:2020, season=1:4))
-  ))
+  index.hat <- FLQuant(dimnames=c(list(age='all'), dmns[c(2, 4, 6)]))
+  for(i in its)
+    index.hat[,,,,,i] <- x[[i]]$Ihat
 
-  # H [y, s, f] - hr
-  out$hr <- FLQuant(unlist(lapply(x, '[[', 'H')),
-    dimnames=list(age='all', year=2000:2020, season=1:4, area=1:6,
-    iter=seq(nits)), units='hr')
-  out$hrs <- areaSums(out$hr)
-
-  # sela - catch.sel (a, s, u, f)
-  out$catch.sel <- Reduce(combine, lapply(x, function(i) {
-    res <- FLQuant(dimnames=list(age=0:14, year=2000, unit=c('F', 'M'),
-      season=1:4, area=1:6), units='')
-    res[] <- aperm(i$sela, c(1,3,2,4))
-    return(res %/% apply(res, 2:6, max))
-    }
-  ))
- 
-  # HR @age[a,y,s,f,u]
-  out$hra <- expand(out$hr, age=0:14, unit=c('F', 'M'),
-    fill=TRUE) %*% out$catch.sel
-
-  # catches (y, s, f)
-  caf <- FLQuant(dimnames=list(year=2018:2020, season=1:4, area=1:6))
-  caf[] <- C[19:21,,]
-  out$cap <- caf %/% areaSums(caf)
- 
-  # sel
-  sel <- yearMeans(areaMeans(out$catch.sel %*% out$cap))
-  out$sel <- sel %/% apply(sel, 2:6, max)
-
-  # catch.n
-  out$catch.n <- out$stock.n %*% out$hra
+  # index.q - lnq
+  lnq <- unlist(lapply(x, '[[', 'lnq'))
+  index.q <- FLQuant(exp(lnq), dimnames=dmns[c(4, 6)])
 
   # - FLPar
-
-  # B0
-  B0 <- unlist(lapply(x, '[[', 'B0'))
-
-  # R0, value in thousands
-  R0 <- unlist(lapply(x, '[[', 'R0')) / 1000
-
-  # h [i]
-  h <- unlist(lapply(x, '[[', 'h'))
   
   # srpars
-  out$srpars <-  FLPar(v=B0, R0=R0, s=h)
+  B0 <- unlist(lapply(x, '[[', 'B0'))
+  R0 <- unlist(lapply(x, '[[', 'R0')) / 1000
+  h <- unlist(lapply(x, '[[', 'h'))
+  srpars <-  FLPar(v=B0, R0=R0, s=h)
   
-  # hmsy [s, i]
-  Hmsy <- unlist(lapply(x, '[[', 'hmsy'))
-
-  # Cmsy
-  cmsy <- unlist(lapply(x, '[[', 'Cmsy'))
-
   # refpts
-  out$hrmsy <- FLPar(Hmsy, dimnames=list(params='HRMSY', season=1:4, 
-    iter=seq(nits)))
-
-  out$refpts <- FLPar(R0=R0, B0=B0, MSY=cmsy,
-    HRMSY=c(seasonMeans(as(out$hrmsy, 'FLQuant'))))
+  cmsy <- unlist(lapply(x, '[[', 'Cmsy'))
+  hrmsy <- FLPar(unlist(lapply(x, '[[', 'hmsy')),
+    dimnames=list(params='HRMSY', season=1:4, iter=its))
+  refpts <- FLPar(B0=B0, MSY=cmsy,
+    HRMSY=c(seasonMeans(as(hrmsy, 'FLQuant'))))
 
   # rho
-  out$rho <- unlist(lapply(x, '[[', 'rho'))
+  rho <- unlist(lapply(x, '[[', 'rho'))
 
-  # - FLQuant
+  # - metrics
 
-  # SSB
-  out$ssb <- Reduce(combine, lapply(x, function(i)
-   FLQuant(i$SSB, dimnames=list(age='all', year=2000:2020))
-  ))
-
-  # Rtot
-  out$rec <- Reduce(combine, lapply(x, function(i)
-   FLQuant(i$Rtot, dimnames=list(age='0', year=2000:2020))
-  ))
-
-  # dep
-  out$dep <- Reduce(combine, lapply(x, function(i)
-   FLQuant(i$dep, dimnames=list(age='all', year=2000:2020))
-  ))
-
-  # index.q
-  lnq <- unlist(lapply(x, '[[', 'lnq'))
-  out$index.q <- FLQuant(exp(lnq), dimnames=list(age='all', season=1:4,
-    iter=seq(length(rho))))
-
-  # stock.n, m, catch.n, catch.sel, ssb, dep, index.q, srpars, refpts,
-  # hr, rec, index.hat, hra
-  return(out)
+  list(stock.n=stock.n, m=m, hr=hr, catch.sel=catch.sel, landings.n=landings.n,
+    index.q=index.q, index.hat=index.hat,
+    srpars=srpars, refpts=refpts, rho=rho 
+  )
 }
+# }}}
+
+# hr & harvest {{{
+
+setMethod("hr", signature(object="FLombf"),
+  function(object) {
+    if(length(biols(object)) == 1)
+      return(attr(object, 'hr')[[1]])
+    else
+      return(attr(object, 'hr'))
+  })
+
+setMethod("harvest", signature(object="FLombf", catch="missing"),
+  function(object) {
+    if(length(biols(object)) == 1)
+      return(attr(object, 'harvest')[[1]])
+    else
+      return(attr(object, 'harvest'))
+  })
+# }}}
+
+# metrics {{{
+
+.annual <- list(
+  R=function(x) seasonSums(unitSums(rec(biol(x)))),
+  B=function(x) unitSums(tsb(biol(x)))[,,,1],
+  HR=function(x) areaSums(seasonMeans(hr(x))),
+  C=function(x) seasonSums(unitSums(Reduce('+', catch(fisheries(x)))))
+)
+
+.seasonal <- list(
+  R=function(x) unitSums(rec(biol(x))),
+  B=function(x) unitSums(tsb(biol(x))),
+  HR=function(x) areaSums(hr(x)),
+  C=function(x) unitSums(Reduce('+', catch(fisheries(x))))
+)
 # }}}
 
 # FUNCTIONS {{{
@@ -1826,7 +1828,6 @@ sim <- function(R0=1e6, dep=0.5, h=0.75, M=0.075, selpars, epsr, dms, pctarg,sel
   rhotarg <- (dep*(5*h-1)+1-h)/(4*h)
 
   # create selectivity-at-age
-
   sela <- get.sel.age(nf,nselg,selidx,selpars) 
     
   # target vector (rho+pc)
@@ -1964,7 +1965,6 @@ get.mcmc2.vars <- function(mcpars) {
     hx <- mcpars[nn,npar+1]
     Mx <- mcpars[nn,npar+2]
     xx <- sim(R0x,depx,hx,Mx,selparsx,epsrx,dms,pctarg,selidx)
-    list(R0x,depx,hx,Mx,selparsx,epsrx,dms,pctarg,selidx)
 
     # N Rtot SSB dep dbmsy Cmsy hmsyrat H Ihat LFhat B0 R0 M h sela
     varlist[[nn]] <- setNames(nm=list("N", "Rtot", "SSB", "dep", "dbmsy",

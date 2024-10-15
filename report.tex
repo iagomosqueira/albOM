@@ -181,17 +181,17 @@ R3a   & 0.63 (0.48–0.77) & 0.42 (0.25–0.59) & 1.94 (1.23–2.5)  & 0.71 (0.3
 
 \subsection{Fits to the data inputs}
 
-The main difference in the scenarios is with respect to which CPUE data is being used: quarterly abundance indices from fleet 1 or fleet 3. In both cases we assume a seasonal structure to the catchability parameters - this results in clear improvements in the fits to the data in both cases, but especially for the fleet 3 scenario. Clearly from Table 4.1, the choice of CPUE series has a clear effect on all the status levels and trends. However, the fits to the data are not meaningfully affected by either estimating $\sigr$ or the assumption of a 1\% annual increasing catchability trend,
-so we only graphically display the fits to the CPUE data for scenarios R1 and R1a in Figure 4.1.
+The main difference in the scenarios is with respect to which CPUE data is being used: quarterly abundance indices from fleet 1 or fleet 3. In both cases we assume a seasonal structure to the catchability parameters - this results in clear improvements in the fits to the data in both cases, but especially for the fleet 3 scenario. Clearly from Table 4.1, the choice of CPUE series has a clear effect on all the status levels and trends. However, the fits to the data are not meaningfully affected by either estimating $\sigr$ or the assumption of a 1\% annual increasing catchability trend. As enough information appears to be available to estimate $\sigr$ reliably, we will concentrate graphical displays from now on for scenarios 2, 2a and 2b. Graphical output for all eight scenarios can be found in Appendix B.
 
-For fleet 1 the abundance trends are arguably best captured in seasons 1 and 4 with very few observations outside the 95\% predictive intervals. For fleet 2 seasons 1, 3 and 4 seem to be the best explained with the model struggling to fully capture the up and down trend in season 2. The difference is not great, but in general the OMs seem to fit better to CPUE from fleet 1 versus that from fleet 3.
+For fleet 1 the abundance trends are arguably best captured in seasons 1 and 4 with very few observations outside the 95\% predictive intervals (Figure 1). For fleet 2 seasons 1, 3 and 4 seem to be the best explained with the model struggling to fully capture the up and down trend in season 2. The difference is not great, but in general the OMs seem to fit better to CPUE from fleet 1 versus that from fleet 3.
 
 \begin{figure}[hb]
     \begin{center}
-        \includegraphics[width=7cm,height=7cm]{report/figures/case4_cpuefits.pdf}\includegraphics[width=7cm,height=7cm]{report/figures/case4a_cpuefits.pdf}
+      \includegraphics[width=7cm,height=7cm]{report/run5/cpue.png}
+      \includegraphics[width=7cm,height=7cm]{report/run5a/cpue.png}
     \end{center}
     \caption{\textit{Fits to quarterly CPUE data (magenta circles) in terms of approximate posterior
-median and 95\% credible interval (blue full and dotted lines) for fleet 1 (left) and 3 (right). In both
+median and 95\% credible interval (blue full and dotted lines) for fleet 1 (left) and 3 (right) and for run 2. In both
 cases seasonal catchability parameters are estimated.}}
 \end{figure}
 
@@ -225,10 +225,14 @@ Runs R2 and R2a both explored the estimation of the recruitment variance paramet
     \caption{\textit{Prior (dotted purple line) and posterior (full black line) for $\sigr$ for OM scenarios R2 (left) and R2a (right).}}
 \end{figure}
 
+\clearpage
+
 \section{Future projections}
 
 - OM now has two-sex seasonal structure
 - SHOW projections @ F0, CMY
+
+\clearpage
 
 \section{Discussion}
 
