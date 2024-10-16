@@ -22,26 +22,26 @@ aa <- run$mcvars[[i]]
 
 # [a,y,u,s,(f)] [15,21,2,4,6]
 
-# N
+# N [21,15,4,2] - nn [15,21,2,4,(6)]
 nn <- array(aperm(aa$N, c(2,1,4,3)), dim=c(15,21,2,4,6))
 
-# HR
+# H [21,4,6] - hh [(15),21,(2),4,6]
 hh <- aperm(array(aa$H, dim=c(21,4,6,15,2)), c(4,1,5,2,3))
 
-# SEL
+# sela [15,4,2,6] - se [(15),21,2,4,6]
 se <- aperm(array(aa$sela, dim=c(15,4,2,6,21)), c(1,5,3,2,4))
 
-# WAA
+# wta [15,4,2] - wa [15,(21),2,4,(6)]
 wa <- aperm(array(run$wta, dim=c(15,4,2,21,6)), c(1,4,3,2,5))
 
 # CA
 ca <- nn * hh * se * wa
 
-# INPUT to abc
-apply(run$C, 1, sum)
-
 # FROM mcvars output
 setNames(apply(ca, 2, sum), nm=2000:2020)
+
+# INPUT to abc
+apply(run$C, 1, sum)
 
 
 # RUN along iters

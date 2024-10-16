@@ -229,18 +229,19 @@ Runs R2 and R2a both explored the estimation of the recruitment variance paramet
 
 \section{Future projections}
 
-- OM now has two-sex seasonal structure
-- SHOW projections @ F0, CMY
+The conditioned OMs are have been incorporated into the FLR toolset and can be employed to project into future under alternative management procedures. Following the recommendation of \cite{mse24}, the seasonal and two-sex structure of the OM has been maintained.
+
+The projection software now employes the exact same code used for the conditioning step, so future biology and fishery dynamics are exactly as described above. The differences between both platforms have slowed down the development of an initial set of simulations. The dimensionality of the OM has increased, as it now conatins not only seasonal a time series separated over both sexes, but a total of six fisheries with different characteristics. Mortality is computed, as explained above, using harvest rates per time step and fishery. This method, which is different from what was employed on the same platform for swordfish, for example, has required additional development of methods and data structures.
 
 \clearpage
 
 \section{Discussion}
 
-This paper outlines a full conditioning of a suite of OMs for Indian Ocean Albacore based on ideas originally raised in \cite{om21} and further explored in \cite{om23a}, with respect to methods for conditioning OMs that are not directly built upon the stock assessment model structures and output. The approach uses much, if not all, of the same demographic and life-history parameters the assessment does, and often key subsets of the same data if they are required to be simulated in the OMs. It also includes key prior information on current/recent/historical status variables (MSY ratios, depletion \textit{etc.}) to help estimate the main abundance, biomass and mortality variables required in the OMs. There is already an IOTC precedent for these type of approach - the original Skipjack tuna OM was conditioned in a similar fashion \cite{skj} using the methodology outlined in \cite{fst}.
+This paper further presents a full conditioning of a suite of OMs for Indian Ocean Albacore based on ideas originally raised in \cite{om21} and further explored in \cite{om23a}, with respect to methods for conditioning OMs that are not directly built upon the stock assessment model structures and output. The approach uses much, if not all, of the same demographic and life-history parameters the assessment does, and often key subsets of the same data if they are required to be simulated in the OMs. It also includes key prior information on current/recent/historical status variables (MSY ratios, depletion \textit{etc.}) to help estimate the main abundance, biomass and mortality variables required in the OMs. There is already an IOTC precedent for these type of approach - the original Skipjack tuna OM was conditioned in a similar fashion \cite{skj} using the methodology outlined in \cite{fst}.
 
 A number of alternative formulations for the OM have been explored, so that the original uncertainty grid employed for this stock is effectively included by the algorithm. Incorporating the correlation among two important variables in the grid, $h$ and $M$, allows this OM to avoid generating population trajectories that could not be employed for MSE projections. Adopting a simpler model structure has allowed to better understand the interaction between data sources, again to ensure the OM obtained is fit for purpose.
 
-The methodology outlined here appears to provide a solid foundation for an OM for this stock. Tests of the candidate MPs are being currently carried out. 
+The methodology outlined here provides a solid foundation for an OM for this stock and should be considered as a viable alternative for other IOTC stocks. The range of alternative OMs presented do not differ greatly in the dynamics and levels of uncertainty. The NW LL CPUE series appears to provide a good indicator on which an MP could be based. We would like to propose run R2b (NW LL CPUE, estimated recruitment variance, and both SSB and overfishing probability priors) as base case for the evaluation of management procedures for the albacore stock.
 
 \section{Acknowledgements}
 
@@ -265,8 +266,9 @@ Work by RH was funded by the Department of Foreign Affairs and Trade of the Gove
     
     \bibitem{mcmc} Brooks, S., Gelman, A., Jones, G., and Meng, X.-L. (1993) Handbook of Markov Chain Monte Carlo. \textit{Chapman \& Hall/CRC}.
 
-    \bibitem{om23a} Hillary, R.M, and Mosqueira, I. (2023) Exploring the ABC approach for IOTC Albacore
-        OM conditioning. \textit{IOTC--2023--MSETaskForce}
+    \bibitem{om23a} Hillary, R.M, and Mosqueira, I. (2023) Exploring the ABC approach for IOTC Albacore OM conditioning. \textit{IOTC--2023--MSETaskForce}
+    
+    \bibitem{mse24} IOTC (2024) IOTC 2024. Report of the 15th Session of the IOTC Working Party on Methods (MSE Task Force). \textit{IOTC–2024–WPM15(MSE)–R[E].}
     
     \bibitem{skj} Bentley, N., and Adam. S. (2016) Management strategy evaluation for the Indian Ocean skipjack tuna fishery. Working paper IOTC-2016-WPM07-15 Rev1 presented to the 7 th IOTC Working Party on Methods, Mahe, Seychelles 11-13 November.
     
@@ -362,6 +364,8 @@ In this case the tolerance for each kernel $\eps$ can basically be interpreted a
 
 \clearpage
 \section*{Appendix B}
+
+Summary plots of the various ooeratingt models explored for albacore are presented here. Each page contains the following plots for each of the model runs:
 
 \begin{itemize}
   \item Timeseries of median and 95\% intervals for

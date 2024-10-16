@@ -113,7 +113,7 @@ setMethod("harvest", signature(object="FLombf", catch="missing"),
   R=function(x) seasonSums(unitSums(rec(biol(x)))),
   B=function(x) unitSums(tsb(biol(x)))[,,,1],
   HR=function(x) areaSums(seasonMeans(hr(x))),
-  C=function(x) seasonSums(unitSums(Reduce('+', catch(fisheries(x)))))
+  C=function(x) seasonMeans(unitSums(Reduce('+', catch(fisheries(x)))))
 )
 
 .seasonal <- list(
