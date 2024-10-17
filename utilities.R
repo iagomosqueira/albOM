@@ -113,7 +113,8 @@ setMethod("harvest", signature(object="FLombf", catch="missing"),
   R=function(x) seasonSums(unitSums(rec(biol(x)))),
   B=function(x) unitSums(tsb(biol(x)))[,,,1],
   HR=function(x) areaSums(seasonMeans(hr(x))),
-  C=function(x) seasonMeans(unitSums(Reduce('+', catch(fisheries(x)))))
+  HRA=function(x) areaSums(seasonMeans(hr(x) / refpts(om)$HRMSY)),
+  C=function(x) seasonSums(unitSums(Reduce('+', catch(fisheries(x)))))
 )
 
 .seasonal <- list(
@@ -1996,7 +1997,8 @@ get.mcmc2.vars <- function(mcpars) {
     varlist[[nn]][['M']] <- Mx
     varlist[[nn]][['h']] <- hx
     varlist[[nn]][['rho']] <- c(rho(FLQuant(epsrx)))
-    varlist[[nn]][['sela']] <- get.sel.age(nf,nselg,selidx,selpars) 
+    varlist[[nn]][['sela']] <- get.sel.age(nf=6, nselg=5,
+      selidx=c(1,2,3,4,5,5),selpars=selparsx)
 
     if(nn %% 100 == 0) cat("Iteration",nn,"of",nnits,"\n")
   }

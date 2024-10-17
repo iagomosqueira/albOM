@@ -10,12 +10,16 @@
 library(mse)
 
 source("utilities.R")
+source('../albMSE/utilities.R')
 
 # source("output_base.R")
 
 # LOAD SS3 base run
 
 load("output/base.rda")
+
+pcbar <- as.matrix(fread('boot/data/pcbar.dat'))
+load('boot/initial/data/pla.rda')
 
 fy <- 2045
 
@@ -27,7 +31,6 @@ run <- mget(load("model/abc_run5b.rda", verbose=FALSE,
 
 # EXTRACT output for all iters
 out <- mc.output(run$mcvars)
-out <- mc.output(run$mcvars, 50)
 
 # CHECK
 
@@ -64,7 +67,9 @@ fis <- FLFisheries(lapply(cas, function(x)
 names(fis) <- c(paste0("LL", 1:4), "PS", "Other")
 
 om <- FLombf(biols=FLBiols(ALB=bio), fisheries=fis,
-  refpts=FLPars(ALB=out$refpts))
+  refpts=FLPars(ALB=out$refpts),
+  projection=mseCtrl(method=fwdabc.om, 
+    args=list(pcbar=pcbar, pla=pla)))
 
 # EXTEND
 om <- fwdWindow(om, end=fy)
@@ -81,7 +86,7 @@ units(attr(om, 'harvest')$ALB) <- "hr"
 
 # SRR deviances
 deviances(om) <- rlnormar1(n=500, meanlog=0, sdlog=run$sigrpost, rho=out$rho,
-  years=2020:2045)
+  years=2000:fy)
 
 # PLOT
 plot(metrics(om, metrics=.annual))
@@ -89,15 +94,17 @@ plot(metrics(om, metrics=.annual))
 # - BUILD oem
 
 # idx: FLIndexBiomass by season, with sel.pattern by sex
-
-sp <- expand(out$catch.sel[,,,,1], year=2000:fy)
-dimnames(sp) <- list(area='unique')
-
+# TODO: SIMPLIFY naming
 NW <- FLIndexBiomass(
-  index=window(out$index.hat %*% out$index.q, end=fy),
-  index.q=expand(out$index.q, year=2000:fy),
-  catch.wt=expand(unitMeans(wt(biol(om))), year=2000:fy),
-  sel.pattern=sp)
+  index=expand(window(out$index.hat %*% out$index.q, end=fy), area=1),
+  index.q=expand(out$index.q, year=2000:fy, area=1),
+  catch.wt=expand(wt(biol(om)), year=2000:fy, area=1),
+  sel.pattern=expand(out$catch.sel[,,,,1], year=2000:fy, fill=TRUE),
+  range=c(startf=0.5, endf=0.5))
+
+# BUG:
+sel.pattern(NW[, ac(2021:2045)] <-
+  sel.pattern(NW)[, ac(2020)]
 
 # stk: no units
 oem <- FLoem(observations=list(ALB=list(idx=FLIndices(NW=NW),
@@ -105,4 +112,4 @@ oem <- FLoem(observations=list(ALB=list(idx=FLIndices(NW=NW),
   method=sampling.oem)
 
 # SAVE
-save(om, oem, file='output/om5b-test50.rda', compress='xz')
+save(om, oem, file='output/om5b.rda', compress='xz')
